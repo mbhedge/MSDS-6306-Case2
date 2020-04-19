@@ -1,0 +1,179 @@
+---
+title: "MH_Case2"
+author: "MHedge"
+date: "4/13/2020"
+output:
+  html_document: default
+  pdf_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+# Force installing packages on other people's systems is considered rude.
+# If you do not have the required libraries, you may uncomment the following
+# section to auto-install them if you so desire.
+
+# if(!require(rmarkdown)) {install.packages("rmarkdown")}
+# if(!require(tidyverse)) {install.packages("tidyverse")}
+# if(!require(psych)) {install.packages("psych")} # pair.panels
+# if(!require(e1071)) {install.packages("e1071")} # naive bayes classifier
+# if(!require(GGally)) {install.packages("GGally")}
+# if(!require(shiny)) {install.packages("shiny")}
+# if(!require(class)) {install.packages("class")}
+# if(!require(investr)) {install.packages("investr")}
+# if(!require(shinydashboard)) {install.packages("shinydashboard")} # 
+# if(!require(caret)) {install.packages("caret")} # Classification and Regression training
+# if(!require(ggpubr)) {install.packages("ggpubr")} # 
+# if(!require(git2r)) {install.packages("git2r")} # 
+# if(!require(klaR)) {install.packages("klaR")} # 
+# if(!require(knitr)) {install.packages("knitr")} # 
+# if(!require(markdown)) {install.packages("markdown")} # 
+# if(!require(modeltools)) {install.packages("modeltools")} # 
+# if(!require(NLP)) {install.packages("NLP")} # 
+# if(!require(plyr)) {install.packages("plyr")} # 
+# if(!require(sourcetools)) {install.packages("sourcetools")} # 
+# if(!require(tm)) {install.packages("tm")} # 
+# if(!require(visdat)) {install.packages("visdat")} # 
+
+library(rmarkdown)
+library(tidyverse)
+library(psych)
+library(e1071)
+library(ggplot2)
+library(GGally)
+library(shiny)
+library(class)
+library(investr)
+library(shinydashboard)
+library(caret)
+library(ggpubr)
+library(git2r)
+library(klaR)
+library(knitr)
+library(markdown)
+library(modeltools)
+library(NLP)
+library(plyr)
+library(sourcetools)
+library(tm)
+library(visdat)
+library(corrplot)
+library(qwraps2)
+library(PerformanceAnalytics)
+library(formattable)
+
+```
+
+Greetings Mr. CEO and Mr. CFO of Frito Lay, other distinguished guests. On behalf of DDS Analytics, I am Michael Hedge, data project manager assigned to your project.
+
+Given the company and personnel data, our research intends to answer the primary question of the top three factors contributing to employee turnover.
+
+
+
+```{r import Case2 data}
+Case2 <- read.csv("CaseStudy2-data.csv", header = TRUE)
+must_convert <- sapply(Case2,is.factor)          # convert variables from factor to numeric
+Case2_hold <- sapply(Case2[,must_convert],unclass)    # displays all data as numeric
+Case2num <- cbind(Case2[,!must_convert],Case2_hold)   # merges converted numerica data with original data
+
+Case2num <- Case2num[,order(colnames(Case2num))]  # puts data in alphabetical order
+
+attach(Case2num)
+
+summary(Case2num)
+
+# Correlate to Attrition to find top three factors
+
+Corr1 <- cor(Case2num[-2],Case2num$Attrition)
+Corr1
+```
+First, my team and I would also like to thank you for providing such a complete dataset.
+
+Gentlemen, after looking at the Attrition correlation data, we observed that Marital Status, Overtime and Job Involvement are the top three factors affecting Attrition.
+
+After your initial guidance, we looked at the factors affecting Attrition and saw that there were both positive (associated with retention) and negative (associated with attrition) factors.
+
+Preliminary analysis based on brief view of data and observations.
+
+We would like to recommend an additional study which would include the top three positive and negative factors affecting Attrition. We would provide an advanced model based on these six factors from this advanced analysis with your permission and in the near future.
+
+We were unable to create a prediction model based on the dataset that you provided.
+
+
+
+```{r import Test2 data}
+Test2 <- read.csv("CaseStudy2CompSet No Attrition.csv", header = TRUE)
+test_convert <- sapply(Test2,is.factor)          # convert variables from factor to numeric
+Test2_hold <- sapply(Test2[,test_convert],unclass)    # displays all data as numeric
+
+Test2num <- cbind(Test2[,!test_convert],Test2_hold)   # merges converted numerica data with original data
+
+Test2num <- Test2num[,order(colnames(Test2num))]  # puts data in alphabetical order
+
+# attach(Test2num)
+
+```
+
+# Create prediction model for attrition based on top three factors of Overtime, Marital Status and Job # Involvement using naiveBayes
+
+
+
+```{r naiveBayes model}
+
+model1 = naiveBayes(Case2num[,c("OverTime","MaritalStatus","JobInvolvement")],factor(Case2num$Attrition, labels = c("No","Yes")))
+predicted_attrition <- as.data.frame(predict(model1,Test2num[,c("OverTime","MaritalStatus","JobInvolvement")]))
+predicted_attrition
+
+Test2out <- cbind(Test2,predicted_attrition)
+Test2out
+write.csv(Test2out, "Case2PredictionsHedge_Attrition.csv")
+# Case2PredictionsHedge_Attrition.csv
+
+#CM = confusionMatrix(predict(model,Test2num[,c("OverTime","MaritalStatus","JobInvolvement")]))
+#CM
+```
+We are now creating the linear regression model to calculate salary (Monthly Income)
+
+
+```{Calculate linear regression model for salary}
+
+summary(Case2num)
+
+model2 <- lm(MonthlyIncome~Age + Attrition + BusinessTravel + DailyRate + Department +               DistanceFromHome + Education + EducationField + EmployeeCount + EmployeeNumber + EnvironmentSatisfaction + Gender + HourlyRate + JobInvolvement + JobLevel + JobRole + JobSatisfaction + MaritalStatus + MonthlyRate + NumCompaniesWorked + OverTime + PercentSalaryHike + PerformanceRating + RelationshipSatisfaction + StockOptionLevel + TotalWorkingYears + TrainingTimesLastYear + WorkLifeBalance + YearsAtCompany + YearsInCurrentRole + YearsSinceLastPromotion + YearsWithCurrManager)
+summary(model2)
+
+anova(model2)
+
+# read in test data set for salary calculation
+Test3 <- read_excel("CaseStudy2CompSet No Salary.xlsx")
+View(CaseStudy2CompSet_No_Salary)
+test_convert3 <- sapply(Test3,is.factor)          # convert variables from factor to numeric
+Test3_hold <- sapply(Test3[,!test_convert3],unclass)    # displays all data as numeric
+
+Test3num <- cbind(Test3[,!test_convert3],Test3_hold)   # merges converted numerica data with original data
+
+Test3num <- Test3num[,order(colnames(Test2num))]  # puts data in alphabetical order
+
+str(Test3num)
+str(Test3_hold)
+head(Test3_hold)
+head(Test2_hold)
+
+# predicted_salary <- as.data.frame(predict(model2,Test3num[,c(Age + Attrition + BusinessTravel + DailyRate + Department + DistanceFromHome + Education + EducationField + EmployeeCount + EmployeeNumber + EnvironmentSatisfaction + Gender + HourlyRate + JobInvolvement + JobLevel + JobRole + JobSatisfaction + MaritalStatus + MonthlyRate + NumCompaniesWorked + OverTime + PercentSalaryHike + PerformanceRating + RelationshipSatisfaction + StockOptionLevel + TotalWorkingYears + TrainingTimesLastYear + WorkLifeBalance + YearsAtCompany + YearsInCurrentRole + YearsSinceLastPromotion + YearsWithCurrManager)]))
+
+
+
+#predicted_salary <- as.data.frame(predict(model2,Test3num[,c("Age", "BusinessTravel",  "DailyRate", "Department", "DistanceFromHome", "Education", "EducationField", "EmployeeCount", "EmployeeNumber", "EnvironmentSatisfaction", "Gender", "HourlyRate", "JobInvolvement", "JobLevel", "JobRole", "JobSatisfaction ", "MaritalStatus", "MonthlyRate", "NumCompaniesWorked", "OverTime", "PercentSalaryHike", "PerformanceRating", "RelationshipSatisfaction", "StockOptionLevel", "TotalWorkingYears", "TrainingTimesLastYear", "WorkLifeBalance", "YearsAtCompany", "YearsInCurrentRole", "YearsSinceLastPromotion", "YearsWithCurrManager")]))
+
+# predicted_salary
+
+
+
+```
+
+
+
